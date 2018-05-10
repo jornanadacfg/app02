@@ -6,6 +6,7 @@
 package br.com.cfg.controller;
 
 
+import br.com.cfg.model.DocumentReference;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.jdesktop.observablecollections.ObservableCollections;
 
 /**
  *
@@ -36,6 +38,7 @@ import javafx.stage.Stage;
  */
 public class FXMLDocumentController implements Initializable {
     
+    private List<DocumentReference> docs;
     ObservableList<Document> list = FXCollections.observableArrayList();
     ArrayList<Document> lt;
     
@@ -48,6 +51,13 @@ public class FXMLDocumentController implements Initializable {
     private TableColumn<Document, String> documents;
     @FXML
     private TableColumn<Document, String> erros;
+
+    public FXMLDocumentController() {
+        
+        this.docs = ObservableCollections.observableList(new ArrayList());
+    }
+    
+    
     
     @FXML
     private void handleCloseButtonAction(ActionEvent event) {
@@ -65,13 +75,7 @@ public class FXMLDocumentController implements Initializable {
         List<File> list = fileChooser.showOpenMultipleDialog(new Stage());
         if (list != null) {
             for (File file : list) {
-//                Document doc = new Document();
-//                doc.setNameDocument(file.getName());
-//
-//                doc.setErrosDoc(i++);
-//                // data.add(doc);
-//
-//                model.getItems().add(doc);
+
 
                 i = i + 5;
                 System.out.println("Arquivo: " + file.getName());
@@ -79,9 +83,14 @@ public class FXMLDocumentController implements Initializable {
                 System.out.println("Path Arquivo: " + file.getPath());
 
                 lt.add(new Document(file.getName(),Integer.toString(i)));
+                
+                //docs.add(new DocumentReference(file).connect(this));
+                docs.add(new DocumentReference(file));
                 //openFile(file);
             }
             loadData(lt);
+            
+            loadDocs();
 
         }
 
@@ -170,5 +179,21 @@ public class FXMLDocumentController implements Initializable {
         
         
         
+    }
+    
+    public List<DocumentReference> getDocs() {
+        return docs;
+    }
+    
+    public void loadDocs(){
+        List<DocumentReference> ld  = getDocs();
+        for(DocumentReference dr: ld){
+            System.out.println("---------------------------------------------------------- ");
+            System.out.println("Texto -> " + dr.getContent());
+            System.out.println("---------------------------------------------------------- ");
+            System.out.println("Quantidade palavras -> " + dr.getCount());
+            System.out.println("---------------------------------------------------------- ");
+    
+        }
     }
 }
