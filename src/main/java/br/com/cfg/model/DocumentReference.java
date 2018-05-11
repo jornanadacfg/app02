@@ -5,19 +5,10 @@
  */
 package br.com.cfg.model;
 
-import java.beans.PropertyChangeListener;
+import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.lang.ref.SoftReference;
-import java.nio.charset.Charset;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,21 +17,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ContentHandlerDecorator;
-import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
-import org.jdesktop.beansbinding.BeanProperty;
-import org.jdesktop.beansbinding.Binding;
-import org.jdesktop.beansbinding.Bindings;
-import org.jdesktop.observablecollections.ObservableCollections;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  *
@@ -48,9 +24,11 @@ import org.xml.sax.SAXException;
  */
 public class DocumentReference {
     private final File file;
-    private Integer count = 0;
+    private Integer countError = 0;
     private Tika tika;
-    Map<String, Integer> vwordtext = new HashMap<String, Integer>();
+    private Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
+    Map<Integer, String> vwordtext;
+    Map<Integer, String> posErrorWord;
 
     
 
@@ -58,7 +36,7 @@ public class DocumentReference {
 
     public DocumentReference(File file) {
         this.file = file;
-        this.count = 0;
+        this.countError = 0;
     }
 
     public File getFile() {
@@ -79,24 +57,34 @@ public class DocumentReference {
     
     public int getCount() {
         String st = getContent();
-        StringTokenizer token = new StringTokenizer(st, " .,?:"); //caracateres que não interessam
+        
+        StringTokenizer token = new StringTokenizer(st, " .,?!:/0123456789"); //caracateres que não interessam
         int i = 0;
+        setDropCountError();
+        this.vwordtext = new HashMap<Integer, String>();
+        this.posErrorWord = new HashMap<Integer, String>();
 
         while (token.hasMoreTokens()) {
             String s = token.nextToken();
-            addWord(s,i);
+            
+            addWord(i, s.trim());
+            checkWord(i,s);
             i++;
             System.out.println(s);
         }
         
-        return getVwordtext().size();
+        return getCountError();
     }
     
     
-    private void addWord(String s, int i) {
+    private void addWord( int i, String s) {
         
-        this.vwordtext.put(s, i);
+        this.vwordtext.put(i, s.trim());
         
+    }
+    private void addErrorWord(int i, String s){
+        setCountError(1);
+        this.posErrorWord.put(i, s.trim());
     }
     
     public String getFileName(){
@@ -110,8 +98,33 @@ public class DocumentReference {
         return tika;
     }
     
-    public Map<String, Integer> getVwordtext() {
+    public Map<Integer, String> getVwordtext() {
         return vwordtext;
     }
+    
+    public void checkWord(Integer i, String wordToCheck){
+        if (speller.spell(wordToCheck.trim())) {
+            System.out.println("---OK--- : " + wordToCheck.trim());
+        } else {
+            System.out.println("---ERRADO---: "  + wordToCheck.trim());
+            addErrorWord(i, wordToCheck.trim());
+
+        }
+    }
+
+    public Integer getCountError() {
+        return countError;
+    }
+
+    public void setCountError(Integer countError) {
+        this.countError = this.countError + countError;
+    }
+    
+    public void setDropCountError(){
+        this.countError = 0;
+    }
+            
+    
+    
 
 }

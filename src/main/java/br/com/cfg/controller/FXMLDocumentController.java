@@ -22,12 +22,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableListBase;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.jdesktop.observablecollections.ObservableCollections;
@@ -64,6 +66,8 @@ public class FXMLDocumentController implements Initializable {
         Platform.exit();
     }
     
+    
+    
     @FXML
     private void handleFileChooserMulyiButtonAction(ActionEvent event) {
 
@@ -74,19 +78,15 @@ public class FXMLDocumentController implements Initializable {
         int i = 8;
         List<File> list = fileChooser.showOpenMultipleDialog(new Stage());
         if (list != null) {
-            for (File file : list) {
-
-
-                i = i + 5;
+            for (File file : list) {                
                 System.out.println("Arquivo: " + file.getName());
-                System.out.println("AbsolutePath Arquivo: " + file.getAbsolutePath());
-                System.out.println("Path Arquivo: " + file.getPath());
-
-                lt.add(new Document(file.getName(),Integer.toString(i)));
+                DocumentReference docReference = new DocumentReference(file);
+                System.out.println("Quantidade de palavras erradas -> " + docReference.getCount());             
                 
-                //docs.add(new DocumentReference(file).connect(this));
-                docs.add(new DocumentReference(file));
-                //openFile(file);
+                docs.add(docReference);
+                
+                lt.add(new Document(file.getName(),Integer.toString(docReference.getCount())));
+                
             }
             loadData(lt);
             
@@ -147,6 +147,14 @@ public class FXMLDocumentController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         initializeCols();
         loadData();
+        docsErrrView.setOnMousePressed(new EventHandler<MouseEvent>() {
+            @Override 
+            public void handle(MouseEvent e) {
+               if (e.isPrimaryButtonDown() && e.getClickCount() == 2) {
+                  System.out.println(docsErrrView.getSelectionModel().getSelectedItem());                   
+               }
+            }
+         });
     }    
     
     public void initializeCols(){
@@ -192,6 +200,8 @@ public class FXMLDocumentController implements Initializable {
             System.out.println("Texto -> " + dr.getContent());
             System.out.println("---------------------------------------------------------- ");
             System.out.println("Quantidade palavras -> " + dr.getCount());
+            System.out.println("---------------------------------------------------------- ");
+            System.out.println("Quantidade de palavras erradas -> " + dr.getCountError());
             System.out.println("---------------------------------------------------------- ");
     
         }
