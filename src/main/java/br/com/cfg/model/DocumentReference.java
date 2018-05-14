@@ -9,6 +9,7 @@ import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class DocumentReference {
     private Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
     Map<Integer, String> vwordtext;
     Map<Integer, String> posErrorWord;
+    ArrayList<String> erDoc;
 
     
 
@@ -45,8 +47,10 @@ public class DocumentReference {
 
     public String getContent(){
         String textoExtraido = "";
+        String novoTexto = "";
         try {
             textoExtraido = getTika().parseToString(file);
+            
         } catch (IOException ex) {
             Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
         } catch (TikaException ex) {
@@ -57,16 +61,23 @@ public class DocumentReference {
     
     public int getCount() {
         String st = getContent();
+        System.out.println("Texto -> ");
+        System.out.println(st);
+        System.out.println("Novo texto -> ");
+        String nst = getCleanText(st);
+        System.out.println(nst);
+        System.out.println("Novo texto -> ");
         
-        StringTokenizer token = new StringTokenizer(st, " .,?!:/0123456789"); //caracateres que não interessam
+        StringTokenizer token = new StringTokenizer(nst, " .,?!:/0123456789"); //caracateres que não interessam
         int i = 0;
         setDropCountError();
         this.vwordtext = new HashMap<Integer, String>();
         this.posErrorWord = new HashMap<Integer, String>();
+        this.erDoc = new ArrayList<String>();
 
         while (token.hasMoreTokens()) {
             String s = token.nextToken();
-            
+            String cifen = cheIfen(s);
             addWord(i, s.trim());
             checkWord(i,s);
             i++;
@@ -77,6 +88,16 @@ public class DocumentReference {
     }
     
     
+    public String getCleanText(String st){
+        
+        String novoTexto = st.replace ("\n", " ");
+        String novoTexto2 = novoTexto.replaceAll("\t", " ");
+        String novoTexto3 = novoTexto2.replaceAll("\n", " ");
+        
+        
+        return novoTexto3;
+    }
+    
     private void addWord( int i, String s) {
         
         this.vwordtext.put(i, s.trim());
@@ -84,7 +105,19 @@ public class DocumentReference {
     }
     private void addErrorWord(int i, String s){
         setCountError(1);
+        
         this.posErrorWord.put(i, s.trim());
+        this.erDoc.add(s.trim());
+    }
+    
+    public ArrayList<String> getListErrorsWords(){
+        return this.erDoc;
+        
+    }
+    
+    public Map<Integer, String> getListPosErrorsWords(){
+        
+        return this.posErrorWord;
     }
     
     public String getFileName(){
@@ -100,6 +133,17 @@ public class DocumentReference {
     
     public Map<Integer, String> getVwordtext() {
         return vwordtext;
+    }
+    
+    public String cheIfen(String s){
+        System.out.println("-------------------------");
+        System.out.println("Palavra: " + s);
+        String [] sp = s.split(s);
+        for(String t:sp){
+            System.out.println("t -> " + t);
+        }
+        System.out.println("-------------------------");
+        return s;
     }
     
     public void checkWord(Integer i, String wordToCheck){
