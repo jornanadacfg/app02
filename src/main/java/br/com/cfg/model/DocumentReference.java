@@ -89,13 +89,29 @@ public class DocumentReference {
     
     
     public String getCleanText(String st){
+        String lines[] = st.split("\\r?\\n");
+        StringBuilder std = new StringBuilder();
         
-        String novoTexto = st.replace ("\n", " ");
-        String novoTexto2 = novoTexto.replaceAll("\t", " ");
-        String novoTexto3 = novoTexto2.replaceAll("\n", " ");
+        for(String l: lines){
+            
+            if((l.length() - 1) > 0){
+                
+                if(l.charAt(l.length() - 1) == '-'){
+                    std.append(l.substring(0, l.length() - 1));
+                }else{
+                    std.append(l.substring(0, l.length()) + " ");
+                }
+            }
+            
+            
+        }
+        
+//        String novoTexto = st.replace ("\n", " ");
+//        String novoTexto2 = novoTexto.replaceAll("\t", " ");
+//        String novoTexto3 = novoTexto2.replaceAll("\n", " ");
         
         
-        return novoTexto3;
+        return std.toString();
     }
     
     private void addWord( int i, String s) {
