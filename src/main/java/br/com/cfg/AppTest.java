@@ -14,18 +14,22 @@ import java.util.List;
  */
 public class AppTest {
     public static void main(String[] args) {
-        Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
-        String wordToCheck = "sujeito";
+        Hunspell speller = new Hunspell("C:\\Users\\CarlosFernando\\Documents\\dicbr\\xxxx.dic", "C:\\Users\\CarlosFernando\\Documents\\dicbr\\xxxx.aff");
+        speller.addDic("C:\\Users\\CarlosFernando\\Documents\\dicbr\\standard.dic");
+        String wordToCheck = "Salles";
+        //speller.add(wordToCheck);
+        
         if (speller.spell(wordToCheck)) {
             System.out.println("---OK---");
         } else {
 
             System.out.println("---ERRADO---");
-            List<String> suggestions = speller.suggest(wordToCheck);
-
-            for(String s: suggestions){
-                System.out.println("Sugestões: " + s);
-            }
+            System.out.println("wordToCheck = " + wordToCheck);
+//            List<String> suggestions = speller.suggest(wordToCheck);
+//
+//            for(String s: suggestions){
+//                System.out.println("Sugestões: " + s);
+//            }
         }
 
     }

@@ -5,9 +5,13 @@
  */
 package br.com.cfg.model;
 
+
 import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +32,8 @@ public class DocumentReference {
     private Integer countError = 0;
     private Tika tika;
     private Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
+    
+    private String newpathdic = "C:\\Users\\CarlosFernando\\Documents\\dicbr\\standard.dic";
     Map<Integer, String> vwordtext;
     Map<Integer, String> posErrorWord;
     ArrayList<String> erDoc;
@@ -39,6 +45,7 @@ public class DocumentReference {
     public DocumentReference(File file) {
         this.file = file;
         this.countError = 0;
+        loadDicNew();
     }
 
     public File getFile() {
@@ -163,12 +170,11 @@ public class DocumentReference {
     }
     
     public void checkWord(Integer i, String wordToCheck){
-        if (speller.spell(wordToCheck.trim())) {
+        if (speller.spell(wordToCheck.trim()) ) {
             System.out.println("---OK--- : " + wordToCheck.trim());
-        } else {
+        } else if(!wordToCheck.equals("-")){
             System.out.println("---ERRADO---: "  + wordToCheck.trim());
             addErrorWord(i, wordToCheck.trim());
-
         }
     }
 
@@ -182,6 +188,33 @@ public class DocumentReference {
     
     public void setDropCountError(){
         this.countError = 0;
+    }
+    
+    public void loadDicNew(){
+        try {
+            File f = new File(newpathdic);
+            BufferedReader b = new BufferedReader(new FileReader(f));
+            String readLine = "";
+            
+            boolean bo = false;
+            
+            try {
+                while ((readLine = b.readLine()) != null) {
+                    if(readLine.contains("---"))
+                        bo = true;
+                    
+                    if(bo && (!readLine.contains("---")))
+                        this.speller.add(readLine);
+                        System.out.println(readLine);
+                        
+                    
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
             
     
