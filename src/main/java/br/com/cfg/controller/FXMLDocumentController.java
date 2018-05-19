@@ -6,11 +6,13 @@
 package br.com.cfg.controller;
 
 import br.com.cfg.model.DocumentReference;
+
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -51,6 +53,8 @@ public class FXMLDocumentController implements Initializable {
 
     private List<DocumentReference> docs;
     ObservableList<Document> list = FXCollections.observableArrayList();
+    ObservableList<Estatistica> dataestat = FXCollections.observableArrayList();
+    Map<String, Integer> palavraserradas;
     ArrayList<Document> lt;
 
     FileChooser fileChooser = new FileChooser();
@@ -65,6 +69,8 @@ public class FXMLDocumentController implements Initializable {
     private TableColumn<Document, String> documents;
     @FXML
     private TableColumn<Document, String> erros;
+
+    private TableView<Estatistica> tablestat;
 
     public FXMLDocumentController() {
 
@@ -152,6 +158,11 @@ public class FXMLDocumentController implements Initializable {
 
     }
 
+    private void loadEstatisitica() {
+
+        //Map<String, Integer> getPalavraserradas()
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initializeCols();
@@ -160,25 +171,22 @@ public class FXMLDocumentController implements Initializable {
             @Override
             public void handle(MouseEvent e) {
                 if (e.isPrimaryButtonDown() && e.getClickCount() == 2) {
-                    
-                    
+
                     String errorList = getErrorList(docsErrrView.getSelectionModel().getSelectedIndex());
                     Label label1 = new Label(errorList);
-                    
+
                     Scene secondScene = new Scene(new Group(), 500, 400);
                     VBox vbox = new VBox();
                     vbox.setSpacing(10);
                     vbox.getChildren().add((label1));
-                    
-                    
-                    ((Group)secondScene.getRoot()).getChildren().add(vbox);
+
+                    ((Group) secondScene.getRoot()).getChildren().add(vbox);
                     Stage stage = new Stage();
                     stage.setX(200);
                     stage.setY(100);
                     stage.setTitle("Erros no documento");
                     stage.setScene(secondScene);
                     stage.show();
-                
 
                     System.out.println(docsErrrView.getSelectionModel().getSelectedIndex());
                 }
@@ -187,10 +195,60 @@ public class FXMLDocumentController implements Initializable {
     }
 
     @FXML
-    private void handleMostrarButtonAction(ActionEvent event) {
+    private void handleEstatisiticaButtonAction(ActionEvent event) throws IOException {
+        Scene secondScene = new Scene(new Group(), 500, 400);
 
-   
+        tablestat = new TableView<>();
+        tablestat.setMaxHeight(300);
+        dataestat = FXCollections.observableArrayList(new Estatistica("AElado", "3"), new Estatistica("Sugeto", "9"));
 
+        TableColumn firstNameCol = new TableColumn("Palavras");
+        firstNameCol.setMinWidth(100);
+        firstNameCol.setCellValueFactory(
+                new PropertyValueFactory<>("palavra"));
+
+        TableColumn lastNameCol = new TableColumn("Quantidade");
+        lastNameCol.setMinWidth(100);
+        lastNameCol.setCellValueFactory(
+                new PropertyValueFactory<>("numerros"));
+        
+        loadDataEstat();
+
+        tablestat.setItems(dataestat);
+        tablestat.getColumns().addAll(firstNameCol, lastNameCol);
+
+        firstNameCol.setSortable(false);
+        lastNameCol.setSortType(TableColumn.SortType.DESCENDING);
+
+        Label label1 = new Label("Estatística");
+
+        VBox vbox = new VBox();
+        vbox.setSpacing(10);
+        vbox.getChildren().add((label1));
+
+        vbox.getChildren().addAll(tablestat);
+
+        ((Group) secondScene.getRoot()).getChildren().add(vbox);
+        Stage stage = new Stage();
+        stage.setX(200);
+        stage.setY(100);
+        stage.setTitle("Estatística");
+        stage.setScene(secondScene);
+        stage.show();
+
+    }
+
+    @FXML
+    private void handleMostrarButtonAction(ActionEvent event) throws IOException {
+
+//        Parent root = FXMLLoader.load(getClass().getResource("/fxml/FXML.fxml"));
+//        
+//        Scene scene = new Scene(root);
+//        scene.getStylesheets().add("/styles/Styles.css");
+//        Stage stage = new Stage();
+//        stage.setTitle("JavaFX and Maven");
+//        stage.setScene(scene);
+//        stage.show();
     }
 
     public void initializeCols() {
@@ -220,6 +278,34 @@ public class FXMLDocumentController implements Initializable {
 
     }
 
+    public static class Estatistica {
+
+        private final SimpleStringProperty palavra;
+        private final SimpleStringProperty numerros;
+
+        public Estatistica(String p, String n) {
+            this.palavra = new SimpleStringProperty(p);
+            this.numerros = new SimpleStringProperty(n);
+        }
+
+        public String getPalavra() {
+            return palavra.get();
+        }
+
+        public void setPalavra(String s) {
+            this.palavra.set(s);
+        }
+
+        public String getNumerros() {
+            return numerros.get();
+        }
+
+        public void setNumerros(String s) {
+            this.numerros.set(s);
+        }
+
+    }
+
     public List<DocumentReference> getDocs() {
         return docs;
     }
@@ -237,18 +323,61 @@ public class FXMLDocumentController implements Initializable {
 
         }
     }
-    
-    public String getErrorList(int index){
-        
+
+    public String getErrorList(int index) {
+
         StringBuilder out = new StringBuilder();
-        
+
         DocumentReference dr = docs.get(index);
-        
-        for(int i = 0; i < dr.getListErrorsWords().size(); i++ ){
-            
+
+        for (int i = 0; i < dr.getListErrorsWords().size(); i++) {
+
             out.append(dr.getListErrorsWords().get(i));
             out.append("\n");
         }
         return out.toString();
+    }
+
+    private void loadDataEstat() {
+        this.palavraserradas = new HashMap<String, Integer>();
+        
+        
+        for (DocumentReference d : docs) {
+            ArrayList<String> e = d.getListErrorsWords();
+            for (String s : e) {
+                addPalavraserradas(s);
+            }
+            
+        }
+        
+        Map<String, Integer> lt = getPalavraserradas();
+        System.out.println("load Estatisitica.........");
+        tablestat.getItems().clear();
+        dataestat.removeAll(dataestat);
+        tablestat.refresh();
+
+        long i = 0;
+        for (Map.Entry<String, Integer> p : lt.entrySet()) {
+
+            dataestat.addAll(new Estatistica(p.getKey(), p.getValue().toString()));
+        }
+
+        tablestat.getItems().addAll(dataestat);
+
+    }
+    
+    public void addPalavraserradas(String str) {
+        if (palavraserradas.containsKey(str)) {
+            int c = palavraserradas.get(str) + 1;
+            palavraserradas.replace(str, c);
+
+        } else {
+            palavraserradas.put(str, 1);
+        }
+
+    }
+    
+    public Map<String, Integer> getPalavraserradas() {
+        return palavraserradas;
     }
 }

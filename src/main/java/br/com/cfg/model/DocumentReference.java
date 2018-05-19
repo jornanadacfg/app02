@@ -5,7 +5,6 @@
  */
 package br.com.cfg.model;
 
-
 import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
@@ -28,19 +27,20 @@ import org.apache.tika.exception.TikaException;
  * @author Jan Mares
  */
 public class DocumentReference {
+
     private final File file;
     private Integer countError = 0;
     private Tika tika;
     private Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
-    
-    private String newpathdic = "C:\\Users\\CarlosFernando\\Documents\\dicbr\\standard.dic";
+
+    private String newpathdic = "C:\\appcor\\libs\\standard.dic";
     Map<Integer, String> vwordtext;
     Map<Integer, String> posErrorWord;
     ArrayList<String> erDoc;
 
     
 
-  private PropertyChangeSupport props = new PropertyChangeSupport(this);
+    private PropertyChangeSupport props = new PropertyChangeSupport(this);
 
     public DocumentReference(File file) {
         this.file = file;
@@ -52,12 +52,12 @@ public class DocumentReference {
         return file;
     }
 
-    public String getContent(){
+    public String getContent() {
         String textoExtraido = "";
         String novoTexto = "";
         try {
             textoExtraido = getTika().parseToString(file);
-            
+
         } catch (IOException ex) {
             Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
         } catch (TikaException ex) {
@@ -65,7 +65,7 @@ public class DocumentReference {
         }
         return textoExtraido;
     }
-    
+
     public int getCount() {
         String st = getContent();
         System.out.println("Texto -> ");
@@ -74,106 +74,107 @@ public class DocumentReference {
         String nst = getCleanText(st);
         System.out.println(nst);
         System.out.println("Novo texto -> ");
-        
-        StringTokenizer token = new StringTokenizer(nst, " .,?!:/0123456789"); //caracateres que não interessam
+
+        StringTokenizer token = new StringTokenizer(nst, "\\() .,?!:;/[]{}=0123456789/*&#@+-_%$\""); //caracateres que não interessam
         int i = 0;
         setDropCountError();
         this.vwordtext = new HashMap<Integer, String>();
         this.posErrorWord = new HashMap<Integer, String>();
         this.erDoc = new ArrayList<String>();
+        
 
         while (token.hasMoreTokens()) {
             String s = token.nextToken();
             String cifen = cheIfen(s);
             addWord(i, s.trim());
-            checkWord(i,s);
+            checkWord(i, s);
             i++;
             System.out.println(s);
         }
-        
+
         return getCountError();
     }
-    
-    
-    public String getCleanText(String st){
+
+    public String getCleanText(String st) {
         String lines[] = st.split("\\r?\\n");
         StringBuilder std = new StringBuilder();
-        
-        for(String l: lines){
-            
-            if((l.length() - 1) > 0){
-                
-                if(l.charAt(l.length() - 1) == '-'){
+
+        for (String l : lines) {
+
+            if ((l.length() - 1) > 0) {
+
+                if (l.charAt(l.length() - 1) == '-') {
                     std.append(l.substring(0, l.length() - 1));
-                }else{
+                } else {
                     std.append(l.substring(0, l.length()) + " ");
                 }
             }
-            
-            
+
         }
-        
+
 //        String novoTexto = st.replace ("\n", " ");
 //        String novoTexto2 = novoTexto.replaceAll("\t", " ");
 //        String novoTexto3 = novoTexto2.replaceAll("\n", " ");
-        
-        
         return std.toString();
     }
-    
-    private void addWord( int i, String s) {
-        
+
+    private void addWord(int i, String s) {
+
         this.vwordtext.put(i, s.trim());
-        
+
     }
-    private void addErrorWord(int i, String s){
+
+    private void addErrorWord(int i, String s) {
         setCountError(1);
-        
+
         this.posErrorWord.put(i, s.trim());
         this.erDoc.add(s.trim());
+        
+        
+        
     }
-    
-    public ArrayList<String> getListErrorsWords(){
+
+    public ArrayList<String> getListErrorsWords() {
         return this.erDoc;
-        
+
     }
-    
-    public Map<Integer, String> getListPosErrorsWords(){
-        
+
+    public Map<Integer, String> getListPosErrorsWords() {
+
         return this.posErrorWord;
     }
-    
-    public String getFileName(){
+
+    public String getFileName() {
         return file.getName();
     }
-    
+
     public Tika getTika() {
         if (tika == null) {
             tika = new Tika();
         }
         return tika;
     }
-    
+
     public Map<Integer, String> getVwordtext() {
         return vwordtext;
     }
-    
-    public String cheIfen(String s){
+
+    public String cheIfen(String s) {
         System.out.println("-------------------------");
         System.out.println("Palavra: " + s);
-        String [] sp = s.split(s);
-        for(String t:sp){
+        String[] sp = s.split(s);
+        for (String t : sp) {
             System.out.println("t -> " + t);
         }
         System.out.println("-------------------------");
         return s;
     }
-    
-    public void checkWord(Integer i, String wordToCheck){
-        if (speller.spell(wordToCheck.trim()) ) {
+
+    public void checkWord(Integer i, String wordToCheck) {
+        if (speller.spell(wordToCheck.trim())) {
             System.out.println("---OK--- : " + wordToCheck.trim());
-        } else if(!wordToCheck.equals("-")){
-            System.out.println("---ERRADO---: "  + wordToCheck.trim());
+        } else if (!wordToCheck.equals("-")) {
+            System.out.println("---ERRADO---: " + wordToCheck.trim());
             addErrorWord(i, wordToCheck.trim());
         }
     }
@@ -185,29 +186,30 @@ public class DocumentReference {
     public void setCountError(Integer countError) {
         this.countError = this.countError + countError;
     }
-    
-    public void setDropCountError(){
+
+    public void setDropCountError() {
         this.countError = 0;
     }
-    
-    public void loadDicNew(){
+
+    public void loadDicNew() {
         try {
             File f = new File(newpathdic);
             BufferedReader b = new BufferedReader(new FileReader(f));
             String readLine = "";
-            
+
             boolean bo = false;
-            
+
             try {
                 while ((readLine = b.readLine()) != null) {
-                    if(readLine.contains("---"))
+                    if (readLine.contains("---")) {
                         bo = true;
-                    
-                    if(bo && (!readLine.contains("---")))
+                    }
+
+                    if (bo && (!readLine.contains("---"))) {
                         this.speller.add(readLine);
-                        System.out.println(readLine);
-                        
-                    
+                    }
+                    System.out.println(readLine);
+
                 }
             } catch (IOException ex) {
                 Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
@@ -216,8 +218,9 @@ public class DocumentReference {
             Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-            
+
     
+
     
 
 }
