@@ -8,13 +8,16 @@ package br.com.cfg.controller;
 import br.com.cfg.model.DocumentReference;
 
 import java.awt.Desktop;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,16 +31,22 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -54,11 +63,20 @@ public class FXMLDocumentController implements Initializable {
     private List<DocumentReference> docs;
     ObservableList<Document> list = FXCollections.observableArrayList();
     ObservableList<Estatistica> dataestat = FXCollections.observableArrayList();
+    ObservableList<Listaerros> dataerros = FXCollections.observableArrayList();
+
     Map<String, Integer> palavraserradas;
     ArrayList<Document> lt;
 
     FileChooser fileChooser = new FileChooser();
     Desktop desktop = Desktop.getDesktop();
+    
+    List<File> listFiles;
+
+    private String pdicionario = "";
+    
+    private Stage stageErros;
+    //private String pathdicionario = "C:\\appcor\\libs\\standard.dic";
 
     @FXML
     private AnchorPane rootPane;
@@ -71,6 +89,8 @@ public class FXMLDocumentController implements Initializable {
     private TableColumn<Document, String> erros;
 
     private TableView<Estatistica> tablestat;
+
+    private TableView<Listaerros> tableerros;
 
     public FXMLDocumentController() {
 
@@ -86,18 +106,25 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void handleFileChooserMulyiButtonAction(ActionEvent event) {
 
-        lt = new ArrayList<Document>();
+        
 
         configureFileChooser(fileChooser);
         int i = 8;
-        List<File> list = fileChooser.showOpenMultipleDialog(new Stage());
-        if (list != null) {
-            for (File file : list) {
+        this.listFiles = fileChooser.showOpenMultipleDialog(new Stage());
+        loadDadosTela();
+
+    }
+    
+    public void loadDadosTela(){
+        if (this.listFiles != null) {
+            lt = new ArrayList<Document>();
+            this.docs = ObservableCollections.observableList(new ArrayList());
+            for (File file : listFiles) {
                 System.out.println("Arquivo: " + file.getName());
                 DocumentReference docReference = new DocumentReference(file);
                 System.out.println("Quantidade de palavras erradas -> " + docReference.getCount());
 
-                docs.add(docReference);
+                this.docs.add(docReference);
 
                 lt.add(new Document(file.getName(), Integer.toString(docReference.getCount())));
 
@@ -107,7 +134,6 @@ public class FXMLDocumentController implements Initializable {
             loadDocs();
 
         }
-
     }
 
     private static void configureFileChooser(final FileChooser fileChooser) {
@@ -144,6 +170,7 @@ public class FXMLDocumentController implements Initializable {
     }
 
     private void loadData(ArrayList<Document> lt) {
+        
         System.out.println("loadData.........");
         docsErrrView.getItems().clear();
         list.removeAll(list);
@@ -166,32 +193,112 @@ public class FXMLDocumentController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initializeCols();
-        loadData();
+//        loadData();
         docsErrrView.setOnMousePressed(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent e) {
                 if (e.isPrimaryButtonDown() && e.getClickCount() == 2) {
 
-                    String errorList = getErrorList(docsErrrView.getSelectionModel().getSelectedIndex());
-                    Label label1 = new Label(errorList);
+                    Button button1 = new Button("Adicionar ao dicionário");
+                    button1.setDisable(true);
 
                     Scene secondScene = new Scene(new Group(), 500, 400);
                     VBox vbox = new VBox();
                     vbox.setSpacing(10);
-                    vbox.getChildren().add((label1));
+                    //
 
+                    tableerros = new TableView<>();
+                    tableerros.setMaxHeight(300);
+                    tableerros.setMaxWidth(200);
+                    dataerros = FXCollections.observableArrayList(new Listaerros("AElado"), new Listaerros("Sugeto"));
+
+                    loadErrorList(docsErrrView.getSelectionModel().getSelectedIndex());
+
+                    TableColumn firstCol = new TableColumn("Palavras");
+                    firstCol.setMinWidth(180);
+                    firstCol.setCellValueFactory(
+                            new PropertyValueFactory<>("palavraerro"));
+
+                    //loadDataEstat();
+                    tableerros.setItems(dataerros);
+                    tableerros.getColumns().addAll(firstCol);
+
+                    tableerros.setOnMousePressed(new EventHandler<MouseEvent>() {
+                        @Override
+                        public void handle(MouseEvent e) {
+                            button1.setDisable(false);
+                            System.out.println("#######################");
+                            tableerros.getSelectionModel().getSelectedIndex();
+                            System.out.println("##" + tableerros.getSelectionModel().getSelectedIndex() + "##");
+                            Listaerros l = tableerros.getItems().get(tableerros.getSelectionModel().getSelectedIndex());
+                            System.out.println("#######" + l.getPalavraerro() + "############");
+                            pdicionario = l.getPalavraerro();
+
+                            System.out.println("#######################");
+
+                        }
+
+                    });
+
+                    button1.setOnAction(new EventHandler<ActionEvent>() {
+                        @Override
+                        public void handle(ActionEvent e) {
+                            loadDialog(pdicionario);
+                        }
+                    });
+
+                    firstCol.setSortType(TableColumn.SortType.DESCENDING);
+
+                    vbox.getChildren().add((tableerros));
+                    vbox.getChildren().add((button1));
+                    //button1
                     ((Group) secondScene.getRoot()).getChildren().add(vbox);
-                    Stage stage = new Stage();
-                    stage.setX(200);
-                    stage.setY(100);
-                    stage.setTitle("Erros no documento");
-                    stage.setScene(secondScene);
-                    stage.show();
+//                    ((Group) secondScene.getRoot()).getChildren().add(grid);
+                    stageErros = new Stage();
+                    stageErros.setX(200);
+                    stageErros.setY(100);
+                    stageErros.setTitle("Erros no documento");
+                    stageErros.setScene(secondScene);
+                    stageErros.show();
 
                     System.out.println(docsErrrView.getSelectionModel().getSelectedIndex());
                 }
             }
         });
+    }
+
+    public void loadDialog(String p) {
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Confirmação");
+        String s = "Adicionar a palavra \n" + p + "\n ao dicionário ?";
+        alert.setContentText(s);
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if ((result.isPresent()) && (result.get() == ButtonType.OK)) {
+            //pathdicionario
+            addDicionario(p);
+            stageErros.hide();
+            
+            loadDadosTela();
+            
+            //loadErrorList(docsErrrView.getSelectionModel().getSelectedIndex());
+
+        }
+    }
+
+    public void addDicionario(String str) {
+        try {
+            
+            FileWriter fw = new FileWriter(DocumentReference.pathdicionario, true);
+            BufferedWriter bf = new BufferedWriter(fw);
+            bf.write(str);
+            bf.newLine();
+            bf.close();
+            loadData(lt);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -211,7 +318,7 @@ public class FXMLDocumentController implements Initializable {
         lastNameCol.setMinWidth(100);
         lastNameCol.setCellValueFactory(
                 new PropertyValueFactory<>("numerros"));
-        
+
         loadDataEstat();
 
         tablestat.setItems(dataestat);
@@ -278,6 +385,23 @@ public class FXMLDocumentController implements Initializable {
 
     }
 
+    public static class Listaerros {
+
+        private final SimpleStringProperty palavraerro;
+
+        public Listaerros(String palavraerro) {
+            this.palavraerro = new SimpleStringProperty(palavraerro);
+        }
+
+        public String getPalavraerro() {
+            return palavraerro.get();
+        }
+
+        public void setPalavraerro(String s) {
+            this.palavraerro.set(s);
+        }
+    }
+
     public static class Estatistica {
 
         private final SimpleStringProperty palavra;
@@ -338,18 +462,36 @@ public class FXMLDocumentController implements Initializable {
         return out.toString();
     }
 
+    //
+    private void loadErrorList(int index) {
+        
+        System.out.println("loadData.........");
+        tableerros.getItems().clear();
+        dataerros.removeAll(dataerros);
+        tableerros.refresh();
+        DocumentReference dr = docs.get(index);
+
+        for (int i = 0; i < dr.getListErrorsWords().size(); i++) {
+
+            dataerros.addAll(new Listaerros(dr.getListErrorsWords().get(i)));
+
+        }
+
+        tableerros.getItems().addAll(dataerros);
+
+    }
+
     private void loadDataEstat() {
         this.palavraserradas = new HashMap<String, Integer>();
-        
-        
+
         for (DocumentReference d : docs) {
             ArrayList<String> e = d.getListErrorsWords();
             for (String s : e) {
                 addPalavraserradas(s);
             }
-            
+
         }
-        
+
         Map<String, Integer> lt = getPalavraserradas();
         System.out.println("load Estatisitica.........");
         tablestat.getItems().clear();
@@ -365,7 +507,7 @@ public class FXMLDocumentController implements Initializable {
         tablestat.getItems().addAll(dataestat);
 
     }
-    
+
     public void addPalavraserradas(String str) {
         if (palavraserradas.containsKey(str)) {
             int c = palavraserradas.get(str) + 1;
@@ -376,7 +518,7 @@ public class FXMLDocumentController implements Initializable {
         }
 
     }
-    
+
     public Map<String, Integer> getPalavraserradas() {
         return palavraserradas;
     }

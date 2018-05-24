@@ -33,7 +33,7 @@ public class DocumentReference {
     private Tika tika;
     private Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
 
-    private String newpathdic = "C:\\appcor\\libs\\standard.dic";
+    public static String pathdicionario = "C:\\appcor\\libs\\standard.dic";
     Map<Integer, String> vwordtext;
     Map<Integer, String> posErrorWord;
     ArrayList<String> erDoc;
@@ -193,7 +193,7 @@ public class DocumentReference {
 
     public void loadDicNew() {
         try {
-            File f = new File(newpathdic);
+            File f = new File(pathdicionario);
             BufferedReader b = new BufferedReader(new FileReader(f));
             String readLine = "";
 
