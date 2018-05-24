@@ -5,6 +5,7 @@
  */
 package br.com.cfg.model;
 
+
 import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
