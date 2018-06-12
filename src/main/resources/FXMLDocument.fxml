@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" fx:id="rootPane" prefHeight="424.0" prefWidth="635.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="br.com.cfg.controller.FXMLDocumentController">
+<AnchorPane id="AnchorPane" fx:id="rootPane" prefHeight="424.0" prefWidth="635.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="br.com.cfg.controller.FXMLDocumentController">
    <children>
       <VBox layoutX="4.0" layoutY="76.0" prefHeight="348.0" prefWidth="409.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="4.0" AnchorPane.rightAnchor="222.0" AnchorPane.topAnchor="76.0">
          <children>
@@ -25,6 +25,7 @@
       <Button layoutX="442.0" layoutY="76.0" mnemonicParsing="false" onAction="#handleFileChooserMulyiButtonAction" prefHeight="25.0" prefWidth="126.0" text="Adicionar arquivos" />
       <Button layoutX="442.0" layoutY="110.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" text="Remover Arquivos" />
       <Button layoutX="442.0" layoutY="144.0" mnemonicParsing="false" onAction="#handleEstatisiticaButtonAction" prefHeight="25.0" prefWidth="126.0" text="Estatística" />
-      <Button layoutX="442.0" layoutY="180.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" text="Limpar" />
+      <Button layoutX="442.0" layoutY="214.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" text="Limpar" />
+      <Button layoutX="442.0" layoutY="179.0" mnemonicParsing="false" onAction="#handleSalvarNoBDButtonAction" prefHeight="25.0" prefWidth="126.0" text="Salvar no BD" />
    </children>
 </AnchorPane>

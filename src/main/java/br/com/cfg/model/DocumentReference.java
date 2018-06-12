@@ -5,11 +5,11 @@
  */
 package br.com.cfg.model;
 
-
 import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,9 +20,16 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.extractor.WordExtractor;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 
+// http://javasampleapproach.com/spring-framework/spring-data/springjpa-save-filesimages-mysql-database-lob-annotation
+// http://zetcode.com/db/mysqljava/
 /**
  *
  * @author Jan Mares
@@ -39,8 +46,6 @@ public class DocumentReference {
     Map<Integer, String> posErrorWord;
     ArrayList<String> erDoc;
 
-    
-
     private PropertyChangeSupport props = new PropertyChangeSupport(this);
 
     public DocumentReference(File file) {
@@ -56,14 +61,8 @@ public class DocumentReference {
     public String getContent() {
         String textoExtraido = "";
         String novoTexto = "";
-        try {
-            textoExtraido = getTika().parseToString(file);
-
-        } catch (IOException ex) {
-            Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (TikaException ex) {
-            Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        //textoExtraido = getTika().parseToString(file);
+        textoExtraido = getStringText(file);
         return textoExtraido;
     }
 
@@ -82,7 +81,6 @@ public class DocumentReference {
         this.vwordtext = new HashMap<Integer, String>();
         this.posErrorWord = new HashMap<Integer, String>();
         this.erDoc = new ArrayList<String>();
-        
 
         while (token.hasMoreTokens()) {
             String s = token.nextToken();
@@ -130,9 +128,7 @@ public class DocumentReference {
 
         this.posErrorWord.put(i, s.trim());
         this.erDoc.add(s.trim());
-        
-        
-        
+
     }
 
     public ArrayList<String> getListErrorsWords() {
@@ -154,6 +150,30 @@ public class DocumentReference {
             tika = new Tika();
         }
         return tika;
+    }
+
+    public String getStringText(File file) {
+
+        String out = "";
+        try {
+            if (file.getName().endsWith(".docx")) {
+                XWPFDocument docx = new XWPFDocument(new FileInputStream(file));
+                XWPFWordExtractor we = new XWPFWordExtractor(docx);
+                out = we.getText();
+            }
+            if (file.getName().endsWith(".doc")) {
+                POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(file));
+
+                WordExtractor extractor = new WordExtractor(fs);
+
+                out = extractor.getText();
+            }
+
+        } catch (IOException ex) {
+            Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return out;
     }
 
     public Map<Integer, String> getVwordtext() {
@@ -219,9 +239,5 @@ public class DocumentReference {
             Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
-    
-
-    
 
 }

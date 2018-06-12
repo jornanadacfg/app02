@@ -5,11 +5,13 @@
  */
 package br.com.cfg.controller;
 
+import br.com.cfg.model.Docsword;
 import br.com.cfg.model.DocumentReference;
 
 import java.awt.Desktop;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
@@ -52,6 +54,13 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.engine.jdbc.BlobProxy;
+import org.hibernate.query.Query;
+import org.hibernate.service.ServiceRegistry;
 import org.jdesktop.observablecollections.ObservableCollections;
 
 /**
@@ -61,6 +70,7 @@ import org.jdesktop.observablecollections.ObservableCollections;
 public class FXMLDocumentController implements Initializable {
 
     private List<DocumentReference> docs;
+    private List<Docsword> docsfile;
     ObservableList<Document> list = FXCollections.observableArrayList();
     ObservableList<Estatistica> dataestat = FXCollections.observableArrayList();
     ObservableList<Listaerros> dataerros = FXCollections.observableArrayList();
@@ -70,11 +80,11 @@ public class FXMLDocumentController implements Initializable {
 
     FileChooser fileChooser = new FileChooser();
     Desktop desktop = Desktop.getDesktop();
-    
+
     List<File> listFiles;
 
     private String pdicionario = "";
-    
+
     private Stage stageErros;
     //private String pathdicionario = "C:\\appcor\\libs\\standard.dic";
 
@@ -106,22 +116,36 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void handleFileChooserMulyiButtonAction(ActionEvent event) {
 
-        
-
         configureFileChooser(fileChooser);
         int i = 8;
         this.listFiles = fileChooser.showOpenMultipleDialog(new Stage());
         loadDadosTela();
 
     }
-    
-    
-    public void loadDadosTela(){
+
+    public void loadDadosTela() {
         if (this.listFiles != null) {
-            lt = new ArrayList<Document>();
+            this.lt = new ArrayList<Document>();
+            this.docsfile = new ArrayList<Docsword>();
             this.docs = ObservableCollections.observableList(new ArrayList());
             for (File file : listFiles) {
                 System.out.println("Arquivo: " + file.getName());
+                System.out.println("Arquivo getAbsolutePath: " + file.getAbsolutePath());
+                System.out.println("Arquivo getPath: " + file.getPath());
+
+                Docsword dw = new Docsword();
+
+                dw.setName_doc(file.getName());
+
+                try {
+                    dw.setDocfile(BlobProxy.generateProxy(getDocWord(file.getAbsolutePath())));
+                } catch (IOException ex) {
+                    Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                this.docsfile.add(dw);
+                
+                
                 DocumentReference docReference = new DocumentReference(file);
                 System.out.println("Quantidade de palavras erradas -> " + docReference.getCount());
 
@@ -171,7 +195,7 @@ public class FXMLDocumentController implements Initializable {
     }
 
     private void loadData(ArrayList<Document> lt) {
-        
+
         System.out.println("loadData.........");
         docsErrrView.getItems().clear();
         list.removeAll(list);
@@ -280,17 +304,16 @@ public class FXMLDocumentController implements Initializable {
             //pathdicionario
             addDicionario(p);
             stageErros.hide();
-            
-            loadDadosTela();
-            
-            //loadErrorList(docsErrrView.getSelectionModel().getSelectedIndex());
 
+            loadDadosTela();
+
+            //loadErrorList(docsErrrView.getSelectionModel().getSelectedIndex());
         }
     }
 
     public void addDicionario(String str) {
         try {
-            
+
             FileWriter fw = new FileWriter(DocumentReference.pathdicionario, true);
             BufferedWriter bf = new BufferedWriter(fw);
             bf.write(str);
@@ -357,6 +380,51 @@ public class FXMLDocumentController implements Initializable {
 //        stage.setTitle("JavaFX and Maven");
 //        stage.setScene(scene);
 //        stage.show();
+    }
+
+    @FXML
+    private void handleSalvarNoBDButtonAction(ActionEvent event) throws IOException {
+        
+        for( Docsword d: docsfile){
+            System.out.println("Name_doc -> " + d.getName_doc());
+            System.out.println("Docfile -> " + d.getDocfile());
+            saveDocDB(d);
+        }
+
+
+    }
+    
+    private void saveDocDB(Docsword doc){
+        
+
+        ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().configure().build();
+
+        SessionFactory sessionFactory = new MetadataSources(standardRegistry)
+                .addAnnotatedClass(Docsword.class).buildMetadata()
+                .buildSessionFactory();
+        Session session = sessionFactory.openSession();
+
+
+        String hql = "from Docsword where name_doc = '" + doc.getName_doc() + "'";
+        Query query = session.createQuery(hql);
+        List<Docsword> listDocsword = query.list();
+
+        System.out.println("hql : " + hql);
+
+        if (!(listDocsword.size() > 0)) {
+            System.out.println("---Não existe!----");
+            session.beginTransaction();
+            session.save(doc);
+            session.getTransaction().commit();
+            
+            System.out.println("listDocsword.size() : " + listDocsword.size());
+        } else {
+            System.out.println("---Existe!----");
+        }
+
+        session.close();
+        sessionFactory.close();
+        
     }
 
     public void initializeCols() {
@@ -465,7 +533,7 @@ public class FXMLDocumentController implements Initializable {
 
     //
     private void loadErrorList(int index) {
-        
+
         System.out.println("loadData.........");
         tableerros.getItems().clear();
         dataerros.removeAll(dataerros);
@@ -522,5 +590,18 @@ public class FXMLDocumentController implements Initializable {
 
     public Map<String, Integer> getPalavraserradas() {
         return palavraserradas;
+    }
+
+    private static byte[] getDocWord(String filedoc) throws IOException {
+
+        File file = new File(filedoc);
+        FileInputStream inputStream = new FileInputStream(filedoc);
+
+        byte[] fileBytes = new byte[(int) file.length()];
+        inputStream.read(fileBytes);
+        inputStream.close();
+
+        return fileBytes;
+
     }
 }
