@@ -33,25 +33,32 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.hibernate.Session;
@@ -73,6 +80,7 @@ public class FXMLDocumentController implements Initializable {
     private List<Docsword> docsfile;
     ObservableList<Document> list = FXCollections.observableArrayList();
     ObservableList<Estatistica> dataestat = FXCollections.observableArrayList();
+    ObservableList<Estatistica> dataestatdb = FXCollections.observableArrayList();
     ObservableList<Listaerros> dataerros = FXCollections.observableArrayList();
 
     Map<String, Integer> palavraserradas;
@@ -99,6 +107,7 @@ public class FXMLDocumentController implements Initializable {
     private TableColumn<Document, String> erros;
 
     private TableView<Estatistica> tablestat;
+    private TableView<Estatistica> tablestatdb;
 
     private TableView<Listaerros> tableerros;
 
@@ -144,8 +153,7 @@ public class FXMLDocumentController implements Initializable {
                 }
 
                 this.docsfile.add(dw);
-                
-                
+
                 DocumentReference docReference = new DocumentReference(file);
                 System.out.println("Quantidade de palavras erradas -> " + docReference.getCount());
 
@@ -384,18 +392,115 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void handleSalvarNoBDButtonAction(ActionEvent event) throws IOException {
-        
-        for( Docsword d: docsfile){
+
+        for (Docsword d : docsfile) {
             System.out.println("Name_doc -> " + d.getName_doc());
             System.out.println("Docfile -> " + d.getDocfile());
             saveDocDB(d);
         }
 
+    }
+
+    @FXML
+    private void handleEstatisticaDoBDButtonAction(ActionEvent event) throws IOException {
+
+        System.out.println("Estatística no Banco de dados...");
+
+        Scene estatisticaDoBDScene = new Scene(new Group(), 1000, 500);
+
+
+
+        BorderPane border = new BorderPane();
+        border.setPrefSize(1000,500);
+        border.setPadding(new Insets(20));
+        Label lb = new Label("Estatísticas de erros nos documentos Word no BD");
+        lb.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        BorderPane.setAlignment(lb, Pos.CENTER);
+        
+
+        border.setTop(lb);
+        
+        border.setLeft(addVBox());
+        border.setCenter(addHBox());
+
+        ((Group) estatisticaDoBDScene.getRoot()).getChildren().add(border);
+        Stage stage = new Stage();
+        stage.setX(200);
+        stage.setY(100);
+        stage.setTitle("Estatísticas de erros nos documentos Word no BD");
+        stage.setScene(estatisticaDoBDScene);
+        stage.show();
 
     }
     
-    private void saveDocDB(Docsword doc){
+     private HBox addHBox() {
+
+        HBox hbox = new HBox();
+        hbox.setPadding(new Insets(15, 12, 15, 12));
+        hbox.setSpacing(10);   // Gap between nodes
+        hbox.setStyle("-fx-background-color: #FFFFFF;");
+
+
+
+
+        ObservableList<PieChart.Data> pieChartData
+                = FXCollections.observableArrayList(
+                        new PieChart.Data("AElado", 11),
+                        new PieChart.Data("Sugeto", 9),
+                        new PieChart.Data("pesoa", 7),
+                        new PieChart.Data("dezejo", 5),
+                        new PieChart.Data("Outros", 3));
+        final PieChart chart = new PieChart(pieChartData);
+        chart.setTitle("Palavras com erro");
         
+        hbox.getChildren().addAll(chart);
+        
+        return hbox;
+    }
+      private VBox addVBox() {
+        
+        VBox vbox = new VBox();
+        vbox.setPadding(new Insets(10)); // Set all sides to 10
+        vbox.setSpacing(8);              // Gap between nodes
+
+        Text title = new Text("Erros");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        vbox.getChildren().add(title);
+
+        tablestatdb = new TableView<>();
+        tablestatdb.setMaxHeight(300);
+        tablestatdb.setMaxWidth(1000);
+        dataestatdb = FXCollections.observableArrayList(new Estatistica("AElado", "11"), new Estatistica("Sugeto", "9"), new Estatistica("pesoa", "7"), new Estatistica("dezejo", "5"), new Estatistica("Outros", "3"));
+
+        TableColumn firstNameCol = new TableColumn("Palavras");
+        firstNameCol.setMinWidth(100);
+        firstNameCol.setCellValueFactory(
+                new PropertyValueFactory<>("palavra"));
+
+        TableColumn lastNameCol = new TableColumn("Quantidade");
+        lastNameCol.setMinWidth(100);
+        lastNameCol.setCellValueFactory(
+                new PropertyValueFactory<>("numerros"));
+
+
+        tablestatdb.getItems().clear();
+
+        
+        
+        tablestatdb.setItems(dataestatdb);
+        tablestatdb.refresh();
+        tablestatdb.getColumns().addAll(firstNameCol, lastNameCol);
+
+        firstNameCol.setSortable(false);
+        lastNameCol.setSortType(TableColumn.SortType.DESCENDING);
+        
+        vbox.getChildren().add(tablestatdb);
+        
+        return vbox;
+    }
+
+
+    private void saveDocDB(Docsword doc) {
 
         ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().configure().build();
 
@@ -403,7 +508,6 @@ public class FXMLDocumentController implements Initializable {
                 .addAnnotatedClass(Docsword.class).buildMetadata()
                 .buildSessionFactory();
         Session session = sessionFactory.openSession();
-
 
         String hql = "from Docsword where name_doc = '" + doc.getName_doc() + "'";
         Query query = session.createQuery(hql);
@@ -416,7 +520,7 @@ public class FXMLDocumentController implements Initializable {
             session.beginTransaction();
             session.save(doc);
             session.getTransaction().commit();
-            
+
             System.out.println("listDocsword.size() : " + listDocsword.size());
         } else {
             System.out.println("---Existe!----");
@@ -424,7 +528,7 @@ public class FXMLDocumentController implements Initializable {
 
         session.close();
         sessionFactory.close();
-        
+
     }
 
     public void initializeCols() {

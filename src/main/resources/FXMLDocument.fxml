@@ -21,11 +21,12 @@
             </TableView>
          </children>
       </VBox>
-      <Button layoutX="442.0" layoutY="315.0" mnemonicParsing="false" onAction="#handleCloseButtonAction" prefHeight="25.0" prefWidth="126.0" text="Fechar" />
+      <Button layoutX="442.0" layoutY="343.0" mnemonicParsing="false" onAction="#handleCloseButtonAction" prefHeight="25.0" prefWidth="126.0" text="Fechar" />
       <Button layoutX="442.0" layoutY="76.0" mnemonicParsing="false" onAction="#handleFileChooserMulyiButtonAction" prefHeight="25.0" prefWidth="126.0" text="Adicionar arquivos" />
       <Button layoutX="442.0" layoutY="110.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" text="Remover Arquivos" />
       <Button layoutX="442.0" layoutY="144.0" mnemonicParsing="false" onAction="#handleEstatisiticaButtonAction" prefHeight="25.0" prefWidth="126.0" text="Estatística" />
-      <Button layoutX="442.0" layoutY="214.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" text="Limpar" />
+      <Button layoutX="442.0" layoutY="248.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" text="Limpar" />
       <Button layoutX="442.0" layoutY="179.0" mnemonicParsing="false" onAction="#handleSalvarNoBDButtonAction" prefHeight="25.0" prefWidth="126.0" text="Salvar no BD" />
+      <Button layoutX="442.0" layoutY="213.0" mnemonicParsing="false" onAction="#handleEstatisticaDoBDButtonAction" prefHeight="25.0" prefWidth="126.0" text="Estatísticas do BD" />
    </children>
 </AnchorPane>
