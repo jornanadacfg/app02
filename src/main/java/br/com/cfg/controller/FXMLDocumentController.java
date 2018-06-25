@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +78,7 @@ import org.jdesktop.observablecollections.ObservableCollections;
 public class FXMLDocumentController implements Initializable {
 
     private List<DocumentReference> docs;
+    private List<DocumentReference> docsDB;
     private List<Docsword> docsfile;
     ObservableList<Document> list = FXCollections.observableArrayList();
     ObservableList<Estatistica> dataestat = FXCollections.observableArrayList();
@@ -114,6 +116,7 @@ public class FXMLDocumentController implements Initializable {
     public FXMLDocumentController() {
 
         this.docs = ObservableCollections.observableList(new ArrayList());
+        this.docsDB = ObservableCollections.observableList(new ArrayList());
     }
 
     @FXML
@@ -408,18 +411,15 @@ public class FXMLDocumentController implements Initializable {
 
         Scene estatisticaDoBDScene = new Scene(new Group(), 1000, 500);
 
-
-
         BorderPane border = new BorderPane();
-        border.setPrefSize(1000,500);
+        border.setPrefSize(1000, 500);
         border.setPadding(new Insets(20));
         Label lb = new Label("Estatísticas de erros nos documentos Word no BD");
         lb.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         BorderPane.setAlignment(lb, Pos.CENTER);
-        
 
         border.setTop(lb);
-        
+
         border.setLeft(addVBox());
         border.setCenter(addHBox());
 
@@ -432,33 +432,9 @@ public class FXMLDocumentController implements Initializable {
         stage.show();
 
     }
-    
-     private HBox addHBox() {
 
-        HBox hbox = new HBox();
-        hbox.setPadding(new Insets(15, 12, 15, 12));
-        hbox.setSpacing(10);   // Gap between nodes
-        hbox.setStyle("-fx-background-color: #FFFFFF;");
+    private VBox addVBox() {
 
-
-
-
-        ObservableList<PieChart.Data> pieChartData
-                = FXCollections.observableArrayList(
-                        new PieChart.Data("AElado", 11),
-                        new PieChart.Data("Sugeto", 9),
-                        new PieChart.Data("pesoa", 7),
-                        new PieChart.Data("dezejo", 5),
-                        new PieChart.Data("Outros", 3));
-        final PieChart chart = new PieChart(pieChartData);
-        chart.setTitle("Palavras com erro");
-        
-        hbox.getChildren().addAll(chart);
-        
-        return hbox;
-    }
-      private VBox addVBox() {
-        
         VBox vbox = new VBox();
         vbox.setPadding(new Insets(10)); // Set all sides to 10
         vbox.setSpacing(8);              // Gap between nodes
@@ -482,23 +458,65 @@ public class FXMLDocumentController implements Initializable {
         lastNameCol.setCellValueFactory(
                 new PropertyValueFactory<>("numerros"));
 
-
         tablestatdb.getItems().clear();
 
-        
-        
+        loadDataEstatDB();
+
+        //tablestat.setItems(dataestat);
+        //tablestatdb.setItems(dataestatdb);
         tablestatdb.setItems(dataestatdb);
+
         tablestatdb.refresh();
         tablestatdb.getColumns().addAll(firstNameCol, lastNameCol);
 
         firstNameCol.setSortable(false);
         lastNameCol.setSortType(TableColumn.SortType.DESCENDING);
-        
+
         vbox.getChildren().add(tablestatdb);
-        
+
         return vbox;
     }
 
+    private HBox addHBox() {
+
+        HBox hbox = new HBox();
+        hbox.setPadding(new Insets(15, 12, 15, 12));
+        hbox.setSpacing(10);   // Gap between nodes
+        hbox.setStyle("-fx-background-color: #FFFFFF;");
+        
+        
+
+//        ObservableList<PieChart.Data> pieChartData
+//                = FXCollections.observableArrayList(
+//                        new PieChart.Data("AElado", 11),
+//                        new PieChart.Data("Sugeto", 9),
+//                        new PieChart.Data("pesoa", 7),
+//                        new PieChart.Data("dezejo", 5),
+//                        new PieChart.Data("Outros", 3));
+//        
+//        final PieChart chart = new PieChart(pieChartData);
+        PieChart chart = new PieChart();
+        
+        Map<String, Integer> lt =  loadDataEstatDBGraph();
+        System.out.println("Tamanho lt : " + lt.size());
+        
+        for (Map.Entry<String, Integer> p : lt.entrySet()) {
+            chart.getData().add(new PieChart.Data(p.getKey(), p.getValue()));
+
+            //dataestat.addAll(new Estatistica(p.getKey(), p.getValue().toString()));
+        }
+        
+//        chart.getData().add(new PieChart.Data("AElado", 11));
+//        chart.getData().add(new PieChart.Data("Sugeto", 9));
+//        chart.getData().add(new PieChart.Data("pesoa", 7));
+//        chart.getData().add(new PieChart.Data("dezejo", 5));
+//        chart.getData().add(new PieChart.Data("Outros", 3));
+        chart.setTitle("Palavras com erro");
+
+        hbox.getChildren().addAll(chart);
+
+        return hbox;
+    }
 
     private void saveDocDB(Docsword doc) {
 
@@ -651,6 +669,87 @@ public class FXMLDocumentController implements Initializable {
         }
 
         tableerros.getItems().addAll(dataerros);
+
+    }
+
+    private void loadDataEstatDB() {
+        this.palavraserradas = new HashMap<String, Integer>();
+
+        ServiceRegistry standardRegistry = new StandardServiceRegistryBuilder().configure().build();
+
+        SessionFactory sessionFactory = new MetadataSources(standardRegistry)
+                .addAnnotatedClass(Docsword.class).buildMetadata()
+                .buildSessionFactory();
+        Session session = sessionFactory.openSession();
+
+        //String hql = "from Docsword where name_doc = '" + "Z08_7A_02F_01.doc" + "'";
+        String hql = "from Docsword";
+        Query query = session.createQuery(hql);
+        List<Docsword> listDocsword = query.list();
+
+        System.out.println("hql : " + hql);
+
+        if ((listDocsword.size() > 0)) {
+            System.out.println("---Existe!----");
+            System.out.println("--> listDocsword.size() = " + listDocsword.size());
+
+            for (Docsword d : listDocsword) {
+                System.out.println("Name: " + d.getName_doc());
+
+                try {
+                    DocumentReference docReference = new DocumentReference(d.getDocfile().getBytes(1, (int) d.getDocfile().length()));
+                    System.out.println("Quantidade de palavras -> " + docReference.getCountBlob());
+
+                    ArrayList<String> e = docReference.getListErrorsWords();
+                    for (String s : e) {
+                        addPalavraserradas(s);
+                    }
+
+                    //System.out.println("Quantidade de erros -> " + docReference.getCountError());
+                } catch (SQLException ex) {
+                    Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+        } else {
+            System.out.println("---Não existe!----");
+        }
+        session.close();
+        sessionFactory.close();
+
+        Map<String, Integer> lt = getPalavraserradas();
+        System.out.println("load Estatisitica.........");
+        tablestatdb.getItems().clear();
+        dataestatdb.removeAll(dataestatdb);
+        tablestatdb.refresh();
+
+        long i = 0;
+        for (Map.Entry<String, Integer> p : lt.entrySet()) {
+
+            dataestatdb.addAll(new Estatistica(p.getKey(), p.getValue().toString()));
+        }
+
+        tablestatdb.getItems().addAll(dataestatdb);
+
+    }
+    
+    private Map<String, Integer> loadDataEstatDBGraph() {
+        
+        //this.palavraserradas = new HashMap<String, Integer>();
+
+        for (DocumentReference d : docs) {
+            ArrayList<String> e = d.getListErrorsWords();
+            for (String s : e) {
+                addPalavraserradas(s);
+            }
+
+        }
+
+        Map<String, Integer> lt = getPalavraserradas();
+        System.out.println("Tamanho l em loadDataEstatDBGraph() -> " + lt.size());
+        
+        return lt;
+
 
     }
 

@@ -8,11 +8,13 @@ package br.com.cfg.model;
 import com.atlascopco.hunspell.Hunspell;
 import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,11 +38,12 @@ import org.apache.tika.exception.TikaException;
  */
 public class DocumentReference {
 
-    private final File file;
+    private File file;
+
     private Integer countError = 0;
     private Tika tika;
     private Hunspell speller = new Hunspell("C:\\appcor\\libs\\xxxx.dic", "C:\\appcor\\libs\\xxxx.aff");
-
+    private byte[] blobBytes;
     public static String pathdicionario = "C:\\appcor\\libs\\standard.dic";
     Map<Integer, String> vwordtext;
     Map<Integer, String> posErrorWord;
@@ -54,8 +57,28 @@ public class DocumentReference {
         loadDicNew();
     }
 
+    public DocumentReference(byte[] blobBytes) {
+        this.blobBytes = blobBytes;
+        this.countError = 0;
+        loadDicNew();
+
+    }
+
+    public byte[] getBlobBytes() {
+        return blobBytes;
+    }
+
+    public void setBlobBytes(byte[] blobBytes) {
+        this.blobBytes = blobBytes;
+    }
+
+    //byte[] blobBytes
     public File getFile() {
         return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
     }
 
     public String getContent() {
@@ -65,6 +88,45 @@ public class DocumentReference {
         textoExtraido = getStringText(file);
         return textoExtraido;
     }
+
+    public String getContentBlob() {
+        String textoExtraido = "";
+        String novoTexto = "";
+        //textoExtraido = getTika().parseToString(file);
+
+        textoExtraido = getStringBlobText(this.blobBytes);
+        return textoExtraido;
+    }
+    
+    public int getCountBlob() {
+        String st = getContentBlob();
+        System.out.println("Texto -> ");
+        System.out.println(st);
+        System.out.println("Novo texto -> ");
+        String nst = getCleanText(st);
+        System.out.println(nst);
+        System.out.println("Novo texto -> ");
+
+        StringTokenizer token = new StringTokenizer(nst, "\\() .,?!:;/[]{}=0123456789/*&#@+-_%$\""); //caracateres que não interessam
+        int i = 0;
+        setDropCountError();
+        this.vwordtext = new HashMap<Integer, String>();
+        this.posErrorWord = new HashMap<Integer, String>();
+        this.erDoc = new ArrayList<String>();
+
+        while (token.hasMoreTokens()) {
+            String s = token.nextToken();
+            String cifen = cheIfen(s);
+            addWord(i, s.trim());
+            checkWord(i, s);
+            i++;
+            System.out.println(s);
+        }
+
+        return getCountError();
+    }
+    
+    
 
     public int getCount() {
         String st = getContent();
@@ -150,6 +212,24 @@ public class DocumentReference {
             tika = new Tika();
         }
         return tika;
+    }
+
+    public String getStringBlobText(byte[] blobBytes) {
+        String out = "";
+        InputStream blobInputStream = new ByteArrayInputStream(blobBytes);
+
+        POIFSFileSystem fs;
+        WordExtractor extractor;
+        try {
+            fs = new POIFSFileSystem(blobInputStream);
+            extractor = new WordExtractor(fs);
+            out = extractor.getText();
+        } catch (IOException ex) {
+            Logger.getLogger(DocumentReference.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return out;
+
     }
 
     public String getStringText(File file) {

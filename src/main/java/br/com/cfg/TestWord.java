@@ -6,6 +6,7 @@
 package br.com.cfg;
 
 import br.com.cfg.model.Docsword;
+import br.com.cfg.model.DocumentReference;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -47,7 +48,7 @@ public class TestWord {
 //        } catch (IOException ex) {
 //            Logger.getLogger(TestWord.class.getName()).log(Level.SEVERE, null, ex);
 //        }
-        String hql = "from Docsword where name_doc = '" + "TESTE8" + "'";
+        String hql = "from Docsword where name_doc = '" + "Z08_7A_02F_01.doc" + "'";
         Query query = session.createQuery(hql);
         List<Docsword> listDocsword = query.list();
 
@@ -55,16 +56,37 @@ public class TestWord {
 
         if ((listDocsword.size() > 0)) {
             System.out.println("---Existe!----");
+            System.out.println("--> listDocsword.size() = " + listDocsword.size());
+            
 
             for (Docsword d : listDocsword) {
                 System.out.println("Name: " + d.getName_doc());
-                saveFileDisk(d.getDocfile());
+                
+                try {
+                    DocumentReference docReference = new DocumentReference(d.getDocfile().getBytes(1, (int) d.getDocfile().length()));
+                    System.out.println("Texto -> " + docReference.getContentBlob());
+                    System.out.println("Quantidade de palavras -> " + docReference.getCountBlob());
+                    System.out.println("Quantidade de erros -> " + docReference.getCountError());
+                } catch (SQLException ex) {
+                    Logger.getLogger(TestWord.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
         } else {
             System.out.println("---Não existe!----");
         }
 
+//        if ((listDocsword.size() > 0)) {
+//            System.out.println("---Existe!----");
+//
+//            for (Docsword d : listDocsword) {
+//                System.out.println("Name: " + d.getName_doc());
+//                saveFileDisk(d.getDocfile());
+//            }
+//
+//        } else {
+//            System.out.println("---Não existe!----");
+//        }
 //        if(!session.contains(doc)){
 //            session.beginTransaction();
 //            session.save(doc);
@@ -99,14 +121,6 @@ public class TestWord {
 
         return fileBytes;
 
-    }
-
-    private static void readPhotoOfPerson(int personId, String photoFilePath) throws IOException, SQLException {
-//        Docsword docsword = (Docsword) session.get(Docsword.class, personId);
-//        Blob blob = docsword.getDocfile();
-//        byte[] blobBytes = blob.getBytes(1, (int) blob.length());
-//        saveBytesToFile(photoFilePath, blobBytes);
-//        blob.free();
     }
 
     private static void saveBytesToFile(String filePath, byte[] fileBytes) throws IOException {
